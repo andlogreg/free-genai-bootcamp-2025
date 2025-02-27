@@ -10,7 +10,7 @@ A language learning school wants to build a prototype of learning portal which w
 
 ## Technical Requirements
 
-- Backed to be built with Golang
+- Backend to be built with Golang
 - Use SQLite3 as the database
 - Use Gin or Fiber as the web framework -> Decided on Gin (see below)
 - We should use a task runner (TBD which one)
