@@ -1,0 +1,19 @@
+{
+  "study_activities": [
+    {
+      "name": "Vocabulary Flashcards",
+      "thumbnail_url": "https://example.com/images/flashcards.jpg",
+      "description": "Practice your vocabulary with interactive flashcards"
+    },
+    {
+      "name": "Word Matching Game",
+      "thumbnail_url": "https://example.com/images/matching.jpg",
+      "description": "Match Portuguese words with their English translations"
+    },
+    {
+      "name": "Writing Practice",
+      "thumbnail_url": "https://example.com/images/writing.jpg",
+      "description": "Practice writing Portuguese words and get instant feedback"
+    }
+  ]
+}

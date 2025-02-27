@@ -1,0 +1,79 @@
+{
+  "groups": [
+    {
+      "name": "Basic Greetings",
+      "words": [
+        {
+          "portuguese": "olá",
+          "english": "hello"
+        },
+        {
+          "portuguese": "bom dia",
+          "english": "good morning"
+        },
+        {
+          "portuguese": "boa tarde",
+          "english": "good afternoon"
+        },
+        {
+          "portuguese": "boa noite",
+          "english": "good night"
+        },
+        {
+          "portuguese": "até logo",
+          "english": "see you later"
+        }
+      ]
+    },
+    {
+      "name": "Numbers 1-10",
+      "words": [
+        {
+          "portuguese": "um",
+          "english": "one"
+        },
+        {
+          "portuguese": "dois",
+          "english": "two"
+        },
+        {
+          "portuguese": "três",
+          "english": "three"
+        },
+        {
+          "portuguese": "quatro",
+          "english": "four"
+        },
+        {
+          "portuguese": "cinco",
+          "english": "five"
+        }
+      ]
+    },
+    {
+      "name": "Common Colors",
+      "words": [
+        {
+          "portuguese": "vermelho",
+          "english": "red"
+        },
+        {
+          "portuguese": "azul",
+          "english": "blue"
+        },
+        {
+          "portuguese": "verde",
+          "english": "green"
+        },
+        {
+          "portuguese": "amarelo",
+          "english": "yellow"
+        },
+        {
+          "portuguese": "preto",
+          "english": "black"
+        }
+      ]
+    }
+  ]
+}
