@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -223,18 +224,24 @@ func (suite *GroupHandlerTestSuite) seedTestData() {
 
 // TestListGroups tests the ListGroups endpoint
 func (suite *GroupHandlerTestSuite) TestListGroups() {
-	// Perform the request
+	// Make a request to list groups
 	w := testutil.PerformRequest(suite.T(), suite.router, "GET", "/api/groups", nil)
-
-	// Check the status code
 	testutil.AssertStatusCode(suite.T(), w, http.StatusOK)
 
 	// Parse the response
-	var response []models.Group
+	var response models.PaginatedResponse
 	testutil.ParseResponse(suite.T(), w, &response)
 
+	// Extract the groups from the items field
+	groupsData, err := json.Marshal(response.Items)
+	assert.NoError(suite.T(), err)
+
+	var groups []models.Group
+	err = json.Unmarshal(groupsData, &groups)
+	assert.NoError(suite.T(), err)
+
 	// Verify the response has the expected number of groups
-	assert.Len(suite.T(), response, len(suite.testGroups))
+	assert.Len(suite.T(), groups, len(suite.testGroups))
 
 	// Create a map of group IDs to names for easier verification
 	groupMap := make(map[int64]string)
@@ -243,7 +250,7 @@ func (suite *GroupHandlerTestSuite) TestListGroups() {
 	}
 
 	// Verify that our test groups are in the response
-	for _, group := range response {
+	for _, group := range groups {
 		// If this is one of our test groups, verify the name
 		if expectedName, ok := groupMap[group.ID]; ok {
 			assert.Equal(suite.T(), expectedName, group.Name)
@@ -285,36 +292,40 @@ func (suite *GroupHandlerTestSuite) TestGetGroupNotFound() {
 
 // TestGetGroupWords tests the GetGroupWords endpoint
 func (suite *GroupHandlerTestSuite) TestGetGroupWords() {
-	// Perform the request
-	w := testutil.PerformRequest(
-		suite.T(),
-		suite.router,
-		"GET",
-		fmt.Sprintf("/api/groups/%d/words", suite.testGroups[0].ID),
-		nil,
-	)
+	// Get the first test group
+	group := suite.testGroups[0]
 
-	// Check the status code
+	// Make a request to get the group's words
+	w := testutil.PerformRequest(suite.T(), suite.router, "GET", fmt.Sprintf("/api/groups/%d/words", group.ID), nil)
 	testutil.AssertStatusCode(suite.T(), w, http.StatusOK)
 
 	// Parse the response
-	var response []models.Word
+	var response models.PaginatedResponse
 	testutil.ParseResponse(suite.T(), w, &response)
 
-	// Verify the response has the expected number of words (first two words)
-	assert.Len(suite.T(), response, 2)
+	// Extract the words from the items field
+	wordsData, err := json.Marshal(response.Items)
+	assert.NoError(suite.T(), err)
 
-	// Create a map of word IDs to Portuguese words for easier verification
-	wordMap := make(map[int64]string)
-	for i := 0; i < 2; i++ {
-		wordMap[suite.testWords[i].ID] = suite.testWords[i].Portuguese
+	var words []models.Word
+	err = json.Unmarshal(wordsData, &words)
+	assert.NoError(suite.T(), err)
+
+	// Verify the response has the expected number of words
+	// We expect 2 words for the first group
+	assert.Len(suite.T(), words, 2)
+
+	// Create a map of Portuguese words to English translations for easier verification
+	wordMap := make(map[string]string)
+	for _, word := range suite.testWords {
+		wordMap[word.Portuguese] = word.English
 	}
 
-	// Verify that the expected words are in the response
-	for _, word := range response {
-		// If this is one of our test words, verify the Portuguese
-		if expectedPortuguese, ok := wordMap[word.ID]; ok {
-			assert.Equal(suite.T(), expectedPortuguese, word.Portuguese)
+	// Verify that our test words are in the response
+	for _, word := range words {
+		// If this is one of our test words, verify the translation
+		if expectedEnglish, ok := wordMap[word.Portuguese]; ok {
+			assert.Equal(suite.T(), expectedEnglish, word.English)
 		}
 	}
 }
@@ -405,94 +416,98 @@ func (suite *GroupHandlerTestSuite) TestDeleteGroup() {
 
 // TestAddWordsToGroup tests the AddWordsToGroup endpoint
 func (suite *GroupHandlerTestSuite) TestAddWordsToGroup() {
-	// Add the third word to the second group
-	wordIDs := []int64{suite.testWords[2].ID}
+	// Get the second test group
+	group := suite.testGroups[1]
 
-	// Perform the request
+	// Get the third test word
+	word := suite.testWords[2]
+
+	// Make a request to add the word to the group
 	w := testutil.PerformRequest(
 		suite.T(),
 		suite.router,
 		"POST",
-		fmt.Sprintf("/api/groups/%d/words", suite.testGroups[1].ID),
-		wordIDs,
+		fmt.Sprintf("/api/groups/%d/words", group.ID),
+		[]int64{word.ID},
 	)
-
-	// Check the status code
 	testutil.AssertStatusCode(suite.T(), w, http.StatusNoContent)
 
-	// Verify the word was added to the group in the database
-	var count int
-	err := suite.db.DB.QueryRow(
-		"SELECT COUNT(*) FROM words_groups WHERE group_id = ? AND word_id = ?",
-		suite.testGroups[1].ID, suite.testWords[2].ID,
-	).Scan(&count)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), 1, count)
-
-	// Now check that the word appears in the group's words
+	// Make a request to get the group's words
 	w = testutil.PerformRequest(
 		suite.T(),
 		suite.router,
 		"GET",
-		fmt.Sprintf("/api/groups/%d/words", suite.testGroups[1].ID),
+		fmt.Sprintf("/api/groups/%d/words", group.ID),
 		nil,
 	)
 	testutil.AssertStatusCode(suite.T(), w, http.StatusOK)
 
-	var response []models.Word
+	// Parse the response
+	var response models.PaginatedResponse
 	testutil.ParseResponse(suite.T(), w, &response)
 
-	// Should have one word
-	assert.Len(suite.T(), response, 1)
+	// Extract the words from the items field
+	wordsData, err := json.Marshal(response.Items)
+	assert.NoError(suite.T(), err)
 
-	// And it should be the third word
-	assert.Equal(suite.T(), suite.testWords[2].ID, response[0].ID)
+	var words []models.Word
+	err = json.Unmarshal(wordsData, &words)
+	assert.NoError(suite.T(), err)
+
+	// Verify the response has the expected number of words
+	assert.Len(suite.T(), words, 1)
+
+	// Verify that the word is in the response
+	assert.Equal(suite.T(), word.ID, words[0].ID)
+	assert.Equal(suite.T(), word.Portuguese, words[0].Portuguese)
+	assert.Equal(suite.T(), word.English, words[0].English)
 }
 
 // TestRemoveWordFromGroup tests the RemoveWordFromGroup endpoint
 func (suite *GroupHandlerTestSuite) TestRemoveWordFromGroup() {
-	// First, ensure we have a word in a group
-	// We'll use the first word in the first group, which was added in seedTestData
+	// Get the first test group
+	group := suite.testGroups[0]
 
-	// Perform the request to remove the word
+	// Get the first test word
+	word := suite.testWords[0]
+
+	// Make a request to remove the word from the group
 	w := testutil.PerformRequest(
 		suite.T(),
 		suite.router,
 		"DELETE",
-		fmt.Sprintf("/api/groups/%d/words/%d", suite.testGroups[0].ID, suite.testWords[0].ID),
+		fmt.Sprintf("/api/groups/%d/words/%d", group.ID, word.ID),
 		nil,
 	)
-
-	// Check the status code
 	testutil.AssertStatusCode(suite.T(), w, http.StatusNoContent)
 
-	// Verify the word was removed from the group in the database
-	var count int
-	err := suite.db.DB.QueryRow(
-		"SELECT COUNT(*) FROM words_groups WHERE group_id = ? AND word_id = ?",
-		suite.testGroups[0].ID, suite.testWords[0].ID,
-	).Scan(&count)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), 0, count)
-
-	// Now check that the word no longer appears in the group's words
+	// Make a request to get the group's words
 	w = testutil.PerformRequest(
 		suite.T(),
 		suite.router,
 		"GET",
-		fmt.Sprintf("/api/groups/%d/words", suite.testGroups[0].ID),
+		fmt.Sprintf("/api/groups/%d/words", group.ID),
 		nil,
 	)
 	testutil.AssertStatusCode(suite.T(), w, http.StatusOK)
 
-	var response []models.Word
+	// Parse the response
+	var response models.PaginatedResponse
 	testutil.ParseResponse(suite.T(), w, &response)
 
-	// Should have one word left (the second word)
-	assert.Len(suite.T(), response, 1)
+	// Extract the words from the items field
+	wordsData, err := json.Marshal(response.Items)
+	assert.NoError(suite.T(), err)
 
-	// And it should be the second word
-	assert.Equal(suite.T(), suite.testWords[1].ID, response[0].ID)
+	var words []models.Word
+	err = json.Unmarshal(wordsData, &words)
+	assert.NoError(suite.T(), err)
+
+	// Verify the response has the expected number of words
+	assert.Len(suite.T(), words, 1)
+
+	// Verify that the remaining word is the second word
+	assert.Equal(suite.T(), suite.testWords[1].ID, words[0].ID)
 }
 
 // TestMain runs the test suite

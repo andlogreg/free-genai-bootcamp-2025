@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -131,18 +132,24 @@ func (suite *WordHandlerTestSuite) seedTestData() {
 
 // TestListWords tests the ListWords endpoint
 func (suite *WordHandlerTestSuite) TestListWords() {
-	// Perform the request
+	// Make a request to list words
 	w := testutil.PerformRequest(suite.T(), suite.router, "GET", "/api/words", nil)
-
-	// Check the status code
 	testutil.AssertStatusCode(suite.T(), w, http.StatusOK)
 
 	// Parse the response - updated to match the actual API response format
-	var response []models.Word
+	var response models.PaginatedResponse
 	testutil.ParseResponse(suite.T(), w, &response)
 
+	// Extract the words from the items field
+	wordsData, err := json.Marshal(response.Items)
+	assert.NoError(suite.T(), err)
+
+	var words []models.WordWithStats
+	err = json.Unmarshal(wordsData, &words)
+	assert.NoError(suite.T(), err)
+
 	// Verify the response has the expected number of words
-	assert.Len(suite.T(), response, len(suite.testWords))
+	assert.Len(suite.T(), words, len(suite.testWords))
 
 	// Create a map of Portuguese words to English translations for easier verification
 	wordMap := make(map[string]string)
@@ -151,7 +158,7 @@ func (suite *WordHandlerTestSuite) TestListWords() {
 	}
 
 	// Verify that our test words are in the response
-	for _, word := range response {
+	for _, word := range words {
 		// If this is one of our test words, verify the translation
 		if expectedEnglish, ok := wordMap[word.Portuguese]; ok {
 			assert.Equal(suite.T(), expectedEnglish, word.English)

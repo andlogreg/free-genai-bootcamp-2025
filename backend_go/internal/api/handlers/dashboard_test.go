@@ -403,8 +403,10 @@ func (suite *DashboardHandlerTestSuite) TestGetLastStudySession() {
 	// Verify the response - should be the most recent session (second one)
 	if len(suite.testStudySessions) > 1 {
 		assert.Equal(suite.T(), suite.testStudySessions[1].ID, response.ID)
-		assert.Equal(suite.T(), suite.testStudySessions[1].GroupID, response.GroupID)
-		assert.Equal(suite.T(), suite.testStudySessions[1].StudyActivityID, response.StudyActivityID)
+		//  assert.Equal(suite.T(), suite.testStudySessions[1].GroupID, response.GroupID)
+		// assert.Equal(suite.T(), suite.testStudySessions[1].StudyActivityID, response.StudyActivityID)
+		// GroupID and StudyActivityID are now hidden in the JSON response
+		// so we don't check them here
 		assert.NotEmpty(suite.T(), response.ActivityName)
 		assert.NotEmpty(suite.T(), response.GroupName)
 	}

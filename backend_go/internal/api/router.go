@@ -31,9 +31,16 @@ func SetupRouter(
 		// Study activities routes
 		activities := api.Group("/study_activities")
 		{
+			activities.GET("", studyActivityHandler.ListStudyActivities)
 			activities.GET("/:id", studyActivityHandler.GetStudyActivity)
 			activities.GET("/:id/study_sessions", studyActivityHandler.GetStudyActivitySessions)
 			activities.POST("", studyActivityHandler.CreateStudySession)
+		}
+
+		// Study sessions routes
+		studySessions := api.Group("/study_sessions")
+		{
+			studySessions.GET("", studyActivityHandler.ListStudySessions)
 		}
 
 		// Words routes
@@ -52,6 +59,7 @@ func SetupRouter(
 			groups.GET("", groupHandler.ListGroups)
 			groups.GET("/:id", groupHandler.GetGroup)
 			groups.GET("/:id/words", groupHandler.GetGroupWords)
+			groups.GET("/:id/study_sessions", groupHandler.GetGroupStudySessions)
 			groups.POST("", groupHandler.CreateGroup)
 			groups.PUT("/:id", groupHandler.UpdateGroup)
 			groups.DELETE("/:id", groupHandler.DeleteGroup)

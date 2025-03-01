@@ -141,7 +141,7 @@ The API provides the following endpoints:
 - `GET /api/groups/:id` - Get a specific group
 - `GET /api/groups/:id/words` - Get words in a specific group
 - `GET /api/groups/:id/study_sessions` - Get study sessions for a specific group
-- `POST /api/groups/:id/words/:word_id` - Add a word to a group
+- `POST /api/groups/:id/words` - Add words to a group (expects an array of word IDs)
 - `DELETE /api/groups/:id/words/:word_id` - Remove a word from a group
 
 ### Study Sessions
@@ -150,6 +150,40 @@ The API provides the following endpoints:
 - `GET /api/study_sessions/:id/words` - Get words reviewed in a specific study session
 - `POST /api/study_sessions` - Create a new study session
 
+## Pagination
+
+All list endpoints support pagination with the following query parameters:
+
+- `page` - The page number (default: 1)
+- `page_size` - The number of items per page (default: 10, max: 100)
+
+Example request:
+```
+GET /api/words?page=2&page_size=20
+```
+
+Example response:
+```json
+{
+  "items": [
+    {
+      "id": 21,
+      "portuguese": "casa",
+      "english": "house",
+      "created_at": "2023-01-01T12:00:00Z",
+      "correct_count": 5,
+      "wrong_count": 2
+    },
+    // ... more items
+  ],
+  "pagination": {
+    "current_page": 2,
+    "total_pages": 5,
+    "total_items": 100,
+    "items_per_page": 20
+  }
+}
+```
 
 ## Project Structure Explanation
 

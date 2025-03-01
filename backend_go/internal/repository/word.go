@@ -73,6 +73,50 @@ func (r *WordRepository) ListWords() ([]*models.Word, error) {
 	return words, nil
 }
 
+// ListWordsWithStatsPaginated returns a paginated list of words with their stats
+func (r *WordRepository) ListWordsWithStatsPaginated(page, pageSize int) ([]*models.WordWithStats, int, error) {
+	// Get total count for pagination
+	var totalCount int
+	err := r.db.QueryRow("SELECT COUNT(*) FROM words").Scan(&totalCount)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Calculate offset
+	offset := (page - 1) * pageSize
+
+	// Query for paginated words with stats
+	rows, err := r.db.Query(`
+		SELECT 
+			w.id, w.portuguese, w.english, w.created_at,
+			COALESCE(SUM(CASE WHEN wri.correct = 1 THEN 1 ELSE 0 END), 0) as correct_count,
+			COALESCE(SUM(CASE WHEN wri.correct = 0 THEN 1 ELSE 0 END), 0) as wrong_count
+		FROM words w
+		LEFT JOIN word_review_items wri ON w.id = wri.word_id
+		GROUP BY w.id
+		ORDER BY w.id
+		LIMIT ? OFFSET ?
+	`, pageSize, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var words []*models.WordWithStats
+	for rows.Next() {
+		word := &models.WordWithStats{}
+		if err := rows.Scan(
+			&word.ID, &word.Portuguese, &word.English, &word.CreatedAt,
+			&word.CorrectCount, &word.WrongCount,
+		); err != nil {
+			return nil, 0, err
+		}
+		words = append(words, word)
+	}
+
+	return words, totalCount, nil
+}
+
 func (r *WordRepository) CountWords() (int, error) {
 	var count int
 	err := r.db.QueryRow("SELECT COUNT(*) FROM words").Scan(&count)
@@ -112,4 +156,28 @@ func (r *WordRepository) CreateWord(word *models.Word) (*models.Word, error) {
 	}
 
 	return r.GetWord(id)
+}
+
+// GetWordGroups returns the groups that a word belongs to
+func (r *WordRepository) GetWordGroups(wordID int64) ([]models.WordGroup, error) {
+	rows, err := r.db.Query(`
+		SELECT g.id, g.name
+		FROM groups g
+		JOIN words_groups wg ON g.id = wg.group_id
+		WHERE wg.word_id = ?
+	`, wordID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var groups []models.WordGroup
+	for rows.Next() {
+		group := models.WordGroup{}
+		if err := rows.Scan(&group.ID, &group.Name); err != nil {
+			return nil, err
+		}
+		groups = append(groups, group)
+	}
+	return groups, nil
 }

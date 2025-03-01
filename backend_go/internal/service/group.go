@@ -17,8 +17,28 @@ func (s *GroupService) ListGroups() ([]*models.Group, error) {
 	return s.groupRepo.ListGroups()
 }
 
-func (s *GroupService) GetGroup(id int64) (*models.Group, error) {
-	return s.groupRepo.GetGroup(id)
+// GetGroup returns a group with its stats
+func (s *GroupService) GetGroup(id int64) (*models.GroupDetail, error) {
+	// Get the basic group info
+	group, err := s.groupRepo.GetGroup(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the word count for this group
+	wordCount, err := s.groupRepo.CountGroupWords(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a GroupDetail object with the required stats
+	return &models.GroupDetail{
+		ID:   group.ID,
+		Name: group.Name,
+		Stats: models.GroupStats{
+			TotalWordCount: wordCount,
+		},
+	}, nil
 }
 
 func (s *GroupService) GetGroupWords(id int64) ([]*models.Word, error) {
@@ -43,4 +63,14 @@ func (s *GroupService) AddWordsToGroup(groupID int64, wordIDs []int64) error {
 
 func (s *GroupService) RemoveWordFromGroup(groupID, wordID int64) error {
 	return s.groupRepo.RemoveWordFromGroup(groupID, wordID)
+}
+
+// ListGroupsPaginated returns a paginated list of groups
+func (s *GroupService) ListGroupsPaginated(page, pageSize int) ([]*models.Group, int, error) {
+	return s.groupRepo.ListGroupsPaginated(page, pageSize)
+}
+
+// GetGroupWordsPaginated returns a paginated list of words in a group with stats
+func (s *GroupService) GetGroupWordsPaginated(groupID int64, page, pageSize int) ([]*models.WordWithStats, int, error) {
+	return s.groupRepo.GetGroupWordsPaginated(groupID, page, pageSize)
 }

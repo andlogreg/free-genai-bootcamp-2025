@@ -57,3 +57,11 @@ func (s *StudyActivityService) CreateStudySession(groupID, activityID int64) (*m
 
 	return session, nil
 }
+
+func (s *StudyActivityService) ListStudySessions(offset, limit int) ([]models.StudySessionDetail, error) {
+	return s.sessionRepo.ListStudySessions(offset, limit)
+}
+
+func (s *StudyActivityService) CountStudySessions() (int, error) {
+	return s.sessionRepo.CountStudySessions()
+}

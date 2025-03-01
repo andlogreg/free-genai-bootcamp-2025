@@ -74,8 +74,9 @@ func main() {
 		router := api.SetupRouter(dashboardHandler, studyActivityHandler, wordHandler, groupHandler)
 
 		// Start server
-		log.Println("Starting server on :8080")
-		if err := router.Run(":8080"); err != nil {
+		// TODO: Make port configurable
+		log.Println("Starting server on :3000")
+		if err := router.Run(":3000"); err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
 

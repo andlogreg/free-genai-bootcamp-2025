@@ -114,11 +114,11 @@ Returns information about the most recent study session.
 ```json
 {
   "id": 123,
-  "group_id": 456,
-  "created_at": "2025-02-08T17:20:23-05:00",
-  "study_activity_id": 789,
-  "group_id": 456,
-  "group_name": "Basic Greetings"
+  "activity_name": "Flashcards",
+  "group_name": "Basic Greetings",
+  "start_time": "2025-02-08T17:20:23-05:00",
+  "end_time": "2025-02-08T17:30:23-05:00",
+  "review_items_count": 20
 }
 ```
 
@@ -365,8 +365,7 @@ Returns quick overview statistics.
 {
   "items": [
     {
-      "japanese": "こんにちは",
-      "romaji": "konnichiwa",
+      "portuguese": "olá",
       "english": "hello",
       "correct_count": 5,
       "wrong_count": 2
@@ -422,6 +421,17 @@ Returns quick overview statistics.
   "created_at": "2025-02-08T17:33:07-05:00"
 }
 ```
+
+### POST /api/groups/:id/words
+Adds words to a group.
+
+#### Request Payload
+```json
+[1, 2, 3]  // Array of word IDs
+```
+
+#### Response
+Status: 204 No Content
 
 ## Required Automated Tasks
 

@@ -189,3 +189,91 @@ func (r *GroupRepository) RemoveWordFromGroup(groupID, wordID int64) error {
 	`, groupID, wordID)
 	return err
 }
+
+// ListGroupsPaginated returns a paginated list of groups
+func (r *GroupRepository) ListGroupsPaginated(page, pageSize int) ([]*models.Group, int, error) {
+	// Get total count for pagination
+	var totalCount int
+	err := r.db.QueryRow("SELECT COUNT(*) FROM groups").Scan(&totalCount)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Calculate offset
+	offset := (page - 1) * pageSize
+
+	// Query for paginated groups
+	rows, err := r.db.Query(`
+		SELECT id, name, created_at
+		FROM groups
+		ORDER BY id
+		LIMIT ? OFFSET ?
+	`, pageSize, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var groups []*models.Group
+	for rows.Next() {
+		group := &models.Group{}
+		if err := rows.Scan(&group.ID, &group.Name, &group.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		groups = append(groups, group)
+	}
+
+	return groups, totalCount, nil
+}
+
+// GetGroupWordsPaginated returns a paginated list of words in a group with stats
+func (r *GroupRepository) GetGroupWordsPaginated(groupID int64, page, pageSize int) ([]*models.WordWithStats, int, error) {
+	// Get total count for pagination
+	var totalCount int
+	// TODO: not sure if Join is needed here
+	err := r.db.QueryRow(`
+		SELECT COUNT(*) 
+		FROM words_groups gw
+		JOIN words w ON gw.word_id = w.id
+		WHERE gw.group_id = ?
+	`, groupID).Scan(&totalCount)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Calculate offset
+	offset := (page - 1) * pageSize
+
+	// Query for paginated words with stats
+	rows, err := r.db.Query(`
+		SELECT 
+			w.id, w.portuguese, w.english, w.created_at,
+			COALESCE(SUM(CASE WHEN wri.correct = 1 THEN 1 ELSE 0 END), 0) as correct_count,
+			COALESCE(SUM(CASE WHEN wri.correct = 0 THEN 1 ELSE 0 END), 0) as wrong_count
+		FROM words_groups gw
+		JOIN words w ON gw.word_id = w.id
+		LEFT JOIN word_review_items wri ON w.id = wri.word_id
+		WHERE gw.group_id = ?
+		GROUP BY w.id
+		ORDER BY w.id
+		LIMIT ? OFFSET ?
+	`, groupID, pageSize, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var words []*models.WordWithStats
+	for rows.Next() {
+		word := &models.WordWithStats{}
+		if err := rows.Scan(
+			&word.ID, &word.Portuguese, &word.English, &word.CreatedAt,
+			&word.CorrectCount, &word.WrongCount,
+		); err != nil {
+			return nil, 0, err
+		}
+		words = append(words, word)
+	}
+
+	return words, totalCount, nil
+}

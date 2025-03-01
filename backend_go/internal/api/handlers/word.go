@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"math"
 	"net/http"
 	"strconv"
 
@@ -18,12 +19,39 @@ func NewWordHandler(wordService *service.WordService) *WordHandler {
 }
 
 func (h *WordHandler) ListWords(c *gin.Context) {
-	words, err := h.wordService.ListWords()
+	// Parse pagination parameters
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	pageSize, err := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if err != nil || pageSize < 1 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	// Get paginated words with stats
+	words, totalCount, err := h.wordService.ListWordsWithStatsPaginated(page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, words)
+
+	// Calculate pagination info
+	totalPages := int(math.Ceil(float64(totalCount) / float64(pageSize)))
+
+	// Create response with pagination
+	response := models.PaginatedResponse{
+		Items: words,
+		Pagination: models.Pagination{
+			CurrentPage:  page,
+			TotalPages:   totalPages,
+			TotalItems:   totalCount,
+			ItemsPerPage: pageSize,
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *WordHandler) GetWord(c *gin.Context) {
@@ -33,7 +61,8 @@ func (h *WordHandler) GetWord(c *gin.Context) {
 		return
 	}
 
-	word, err := h.wordService.GetWord(id)
+	// Get word with stats and groups
+	word, err := h.wordService.GetWordDetail(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "word not found"})
 		return

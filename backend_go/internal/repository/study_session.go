@@ -124,18 +124,28 @@ func (r *StudySessionRepository) ListStudySessions(offset, limit int) ([]models.
 	var sessions []models.StudySessionDetail
 	for rows.Next() {
 		var session models.StudySessionDetail
-		var endTime sql.NullTime
+		var endTimeStr sql.NullString
+		var groupID, studyActivityID int64
 		err := rows.Scan(
-			&session.ID, &session.GroupID, &session.StudyActivityID,
+			&session.ID, &groupID, &studyActivityID,
 			&session.CreatedAt, &session.ActivityName, &session.GroupName,
-			&session.ReviewItemsCount, &endTime,
+			&session.ReviewItemsCount, &endTimeStr,
 		)
 		if err != nil {
 			return nil, err
 		}
-		if endTime.Valid {
-			session.EndTime = &endTime.Time
+		// Store the IDs in the hidden fields
+		session.GroupID = groupID
+		session.StudyActivityID = studyActivityID
+
+		// Handle the end time string
+		if endTimeStr.Valid {
+			endTime, err := time.Parse(time.RFC3339, endTimeStr.String)
+			if err == nil {
+				session.EndTime = &endTime
+			}
 		}
+
 		sessions = append(sessions, session)
 	}
 	return sessions, nil
