@@ -1,6 +1,24 @@
 # Frontend Technical Spec
 
+## Business Goal
+
+A language learning school wants to build a prototype of learning portal which will act as three things:
+- Inventory of possible vocabulary that can be learned
+- Act as a  Learning record store (LRS), providing correct and wrong score on practice vocabulary
+- A unified launchpad to launch different learning apps
+
+## Technical Requirements
+
+- Let's focus on desktop first, mobile would be a plus
+- Use React as the frontend framework
+- Use Tailwind CSS for styling
+- Vite.js as the local development server
+- TypeScript for the programming language
+- ShadCN for the UI components
+
 ## Pages
+
+The default route `/` should redirect to `/dashboard`
 
 ### Dashboard `/dashboard`
 
@@ -83,7 +101,7 @@ The purpose of this page is to launch a study activity.
     - select field for group
     - launch now button
 
-## Behaviour
+#### Behaviour
 After the form is submitted a new tab opens with the study activity based on its URL provided in the database.
 
 Also, after form is submitted the page will redirect to the study sesssion show page
@@ -162,7 +180,7 @@ The purpose of this page is to show information about a specific group.
 - GET /api/groups/:id/words
 - GET /api/groups/:id/study_sessions
 
-## Study Sessions Index `/study_sessions`
+### Study Sessions Index `/study_sessions`
 
 #### Purpose
 The purpose of this page is to show a list of study sessions in our database.
@@ -215,3 +233,17 @@ The purpose of this page is to make configurations to the study portal.
 #### Needed API Endpoints
 - POST /api/reset_history
 - POST /api/full_reset
+
+
+## Global Components
+
+### Navigation Bar
+
+A horizontal navigation bar that will be shown on all pages with the following links:
+- Dashboard
+- Study Activities
+- Words
+- Word Groups
+- Sessions
+- Settings
+
