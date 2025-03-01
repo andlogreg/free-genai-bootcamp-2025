@@ -46,7 +46,7 @@ export default function Navbar() {
             to="/dashboard"
             className="text-2xl font-semibold tracking-tight transition-colors duration-300 hover:opacity-80"
           >
-            vocabulare
+            Language Learning Portal
           </Link>
         </div>
 

@@ -1,5 +1,7 @@
 # Language Learning Portal Frontend
 
+![App Screenshot](docs/imgs/F0F271E5-345A-4093-B26D-D8A456D17847.jpg)
+
 ## Project info
 
 This is the frontend for the Language Learning Portal.
